@@ -66,6 +66,9 @@ local DeathSounds = {
 // Dying tanks tracker
 ::g_DyingTanks <- {}
 
+// Active tank tracker — para detectar muerte incluso si player_death falla
+::g_TankDeath_ActiveTanks <- {}
+
 // Precache assets
 function PrecacheTankDeathAssets()
 {
@@ -105,6 +108,21 @@ function PrecacheTankDeathAssets()
 		if (Debug) printl("[TankDeath][DEBUG] " + msg)
 	}
 	
+	function OnGameEvent_player_spawn(params)
+	{
+		if (!("userid" in params)) return
+		local player = GetPlayerFromUserID(params.userid)
+		if (!player || !player.IsValid() || !player.IsPlayer()) return
+		
+		local zType = 0
+		try { zType = player.GetZombieType() } catch(e) {}
+		if (zType == 8) {
+			local idx = player.entindex()
+			::g_TankDeath_ActiveTanks[idx] <- true
+			Dbg("Tank #" + idx + " tracked on spawn")
+		}
+	}
+	
 	function OnGameEvent_player_death(params)
 	{
 		Dbg("ENTER player_death")
@@ -112,15 +130,38 @@ function PrecacheTankDeathAssets()
 			{ Dbg("ABORT: no userid"); return; }
 		
 		local victim = GetPlayerFromUserID(params.userid);
-		if (!MaoLib.IsReal(victim))
-			{ Dbg("ABORT: victim not real"); return; }
+		if (!victim || !victim.IsValid())
+			{ Dbg("ABORT: victim invalid"); return; }
 		
-		if (victim.GetZombieType() != 8)
-			{ Dbg("ABORT: not tank (zType=" + victim.GetZombieType() + ")"); return; }
+		local isTank = false
+		local tankId = victim.entindex()
+		
+		// Método 1: GetZombieType()
+		try {
+			if (victim.GetZombieType() == 8) isTank = true
+		} catch(e) {}
+		
+		// Método 2: NetProp fallback
+		if (!isTank) {
+			try {
+				if (NetProps.GetPropInt(victim, "m_zombieClass") == 8) isTank = true
+			} catch(e) {}
+		}
+		
+		// Método 3: Tracker fallback
+		if (!isTank && tankId in ::g_TankDeath_ActiveTanks) {
+			isTank = true
+		}
+		
+		if (!isTank) {
+			Dbg("ABORT: not tank (entidx=" + tankId + ")")
+			return
+		}
+		
+		delete ::g_TankDeath_ActiveTanks[tankId]
 		
 		local pos = victim.GetOrigin();
 		local angles = victim.EyeAngles();
-		local tankId = victim.GetEntityIndex();
 		
 		::g_DyingTanks[tankId] <- {
 			pos = pos,
@@ -133,22 +174,52 @@ function PrecacheTankDeathAssets()
 		StartTankDeathSequence(pos, angles, tankId);
 	}
 	
+	function OnGameEvent_tank_killed(params)
+	{
+		Dbg("ENTER tank_killed")
+		// tank_killed no tiene victim ID. Usamos el tracker de tanks activos.
+		foreach (tankId, _ in ::g_TankDeath_ActiveTanks) {
+			local tank = EntIndexToHScript(tankId)
+			if (!tank || !tank.IsValid() || NetProps.GetPropInt(tank, "m_lifeState") != 0) {
+				// Este tank ya no está vivo — es el que murió
+				delete ::g_TankDeath_ActiveTanks[tankId]
+				
+				local pos = (tank && tank.IsValid()) ? tank.GetOrigin() : Vector(0,0,0)
+				local angles = (tank && tank.IsValid()) ? tank.EyeAngles() : Vector(0,0,0)
+				
+				::g_DyingTanks[tankId] <- {
+					pos = pos,
+					angles = angles,
+					startTime = Time(),
+					stage = 0
+				};
+				Dbg("Tank #" + tankId + " registered via tank_killed")
+				StartTankDeathSequence(pos, angles, tankId);
+				return
+			}
+		}
+		Dbg("tank_killed: no tracked tank found")
+	}
+	
 	function OnGameEvent_round_end(params)
 	{
 		Dbg("ENTER round_end — clearing all dying tanks")
 		::g_DyingTanks.clear()
+		::g_TankDeath_ActiveTanks.clear()
 	}
 	
 	function OnGameEvent_mission_lost(params)
 	{
 		Dbg("ENTER mission_lost — clearing all dying tanks")
 		::g_DyingTanks.clear()
+		::g_TankDeath_ActiveTanks.clear()
 	}
 	
 	function OnGameEvent_map_transition(params)
 	{
 		Dbg("ENTER map_transition — clearing all dying tanks")
 		::g_DyingTanks.clear()
+		::g_TankDeath_ActiveTanks.clear()
 	}
 }
 

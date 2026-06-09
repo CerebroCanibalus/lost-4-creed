@@ -1,49 +1,30 @@
-// maolib_status.nut — Status Effects v2.0 (Minimalist)
-// Sistema ultra-simplificado de buffs/debuffs.
+// maolib_status.nut — Status Effects v3.0 (Ultra-Minimalist)
+// 
+// PARA QUÉ NOS SIRVE:
+//   1. DoT (Damage over Time) — sangrado de hunting rifle, hellhound, melee.
+//   2. Registry key-value plano — buffs/debuffs temporales de items/perks.
+//
+// QUÉ ELIMINAMOS:
+//   - Stacking rules complejas (multiply/add/max/replace). Sobrediseño.
+//   - Hooks automáticos de daño (maolib_status_hooks.nut). Nadie aplicaba los efectos.
+//   - Categorías predefinidas. Ahora es key-value libre.
 //
 // API:
-//   MaoLib.StatusEffects.Apply(player, type, value, duration=-1, source="generic")
-//   MaoLib.StatusEffects.Get(player, type) → valor combinado
-//   MaoLib.StatusEffects.Remove(player, type, source="")
-//   MaoLib.StatusEffects.ClearAll(player)
 //   MaoLib.StatusEffects.ApplyDoT(victim, type, dps, duration, attacker)
 //   MaoLib.StatusEffects.RemoveDoT(victim, type)
+//   MaoLib.StatusEffects.ClearAllDoTs()
 //
-// Convención: Movimiento (speed/friction) → MaoLib.Modifiers
-//             Todo lo demás → MaoLib.StatusEffects
+//   MaoLib.StatusEffects.Set(player, key, value, duration=-1, source="generic")
+//   MaoLib.StatusEffects.Get(player, key) → tabla de {source, value, expire} o null
+//   MaoLib.StatusEffects.Remove(player, key, source="")
+//   MaoLib.StatusEffects.Clear(player)
 
 if ("MaoLib_Status_init_guard" in getroottable()) return;
 getroottable()["MaoLib_Status_init_guard"] <- true;
 
 ::MaoLib.StatusEffects <- {
-	// ============================================================
-	// CONFIG — Solo tipos que USAMOS
-	// ============================================================
-	Debug = 1
+	Debug = 0
 
-	// Tipo: { default, combine }
-	// combine: "multiply" | "add" | "max"
-	Types = {
-		damage_out       = { def = 1.0, combine = "multiply" },
-		damage_in        = { def = 1.0, combine = "multiply" },
-		fire_rate        = { def = 1.0, combine = "multiply" },
-		reload_speed     = { def = 1.0, combine = "multiply" },
-		melee_speed      = { def = 1.0, combine = "multiply" },
-		move_speed       = { def = 1.0, combine = "multiply" },
-		lifesteal        = { def = 0.0, combine = "replace" },
-		stagger_immunity = { def = 0,   combine = "max"      },
-		fire_immunity    = { def = 0,   combine = "max"      },
-	}
-
-	// Data[entindex][type][source] = { value, expire }
-	Data = {}
-
-	// DoT timers: DoTTimers[entindex][type] = timerName
-	DoTTimers = {}
-
-	// ============================================================
-	// DEBUG
-	// ============================================================
 	function Dbg(msg) {
 		if (Debug) printl("[Status][DBG] " + msg)
 	}
@@ -52,115 +33,10 @@ getroottable()["MaoLib_Status_init_guard"] <- true;
 	}
 
 	// ============================================================
-	// APPLY
+	// DoT SUBSYSTEM
 	// ============================================================
-	function Apply(player, type, value, duration = -1, source = "generic")
-	{
-		if (!player || !player.IsValid() || !player.IsPlayer()) return false
-		if (!(type in Types)) { DbgWarn("unknown type: " + type); return false }
+	DoTTimers = {}
 
-		local uid = player.entindex().tostring()
-		if (!(uid in Data)) Data[uid] <- {}
-		if (!(type in Data[uid])) Data[uid][type] <- {}
-
-		Data[uid][type][source] <- {
-			value = value.tofloat(),
-			expire = (duration < 0) ? -1.0 : (Time() + duration)
-		}
-
-		Dbg("APPLY " + type + "=" + value + " src=" + source + " dur=" + duration)
-		return true
-	}
-
-	// ============================================================
-	// GET
-	// ============================================================
-	function Get(player, type)
-	{
-		if (!player || !player.IsValid()) return _GetDefault(type)
-		local uid = player.entindex().tostring()
-		if (!(uid in Data) || !(type in Data[uid])) return _GetDefault(type)
-
-		_CleanupExpired(uid, type)
-		if (Data[uid][type].len() == 0) return _GetDefault(type)
-
-		local rule = Types[type].combine
-		local def = Types[type].def
-
-		switch (rule) {
-			case "multiply": {
-				local r = def
-				foreach (_, entry in Data[uid][type]) r *= entry.value
-				return r
-			}
-			case "add": {
-				local r = def
-				foreach (_, entry in Data[uid][type]) r += entry.value
-				return r
-			}
-			case "max": {
-				local r = def
-				foreach (_, entry in Data[uid][type])
-					if (entry.value > r) r = entry.value
-				return r
-			}
-			case "replace": {
-				// Último valor (mayor expire time, o -1 = permanente)
-				local latest = null
-				local latestTime = -999
-				foreach (_, entry in Data[uid][type]) {
-					local t = entry.expire
-					if (t < 0) t = 999999
-					if (t > latestTime) { latestTime = t; latest = entry.value }
-				}
-				return latest != null ? latest : def
-			}
-			default: return def
-		}
-	}
-
-	// ============================================================
-	// REMOVE
-	// ============================================================
-	function Remove(player, type, source = "")
-	{
-		if (!player || !player.IsValid()) return false
-		local uid = player.entindex().tostring()
-		if (!(uid in Data) || !(type in Data[uid])) return false
-
-		if (source == "") {
-			// Remove ALL sources of this type
-			delete Data[uid][type]
-		} else if (source in Data[uid][type]) {
-			delete Data[uid][type][source]
-		}
-
-		if (Data[uid][type].len() == 0) delete Data[uid][type]
-		if (Data[uid].len() == 0) delete Data[uid]
-		return true
-	}
-
-	// ============================================================
-	// CLEAR ALL
-	// ============================================================
-	function ClearAll(player)
-	{
-		if (!player || !player.IsValid()) return false
-		local uid = player.entindex().tostring()
-		if (uid in Data) delete Data[uid]
-		// Limpiar DoTs también
-		if (uid in DoTTimers) {
-			foreach (type, timerName in DoTTimers[uid]) {
-				::MaoLib.RemoveTimer(timerName)
-			}
-			delete DoTTimers[uid]
-		}
-		return true
-	}
-
-	// ============================================================
-	// DoT (Damage over Time) — Simple timer-based
-	// ============================================================
 	function ApplyDoT(victim, type, dps, duration, attacker)
 	{
 		if (!victim || !victim.IsValid()) return false
@@ -169,13 +45,13 @@ getroottable()["MaoLib_Status_init_guard"] <- true;
 		local uid = victim.entindex().tostring()
 		local timerName = "dot_" + type + "_" + uid
 
-		// Remover DoT anterior del mismo tipo
+		// Remover DoT anterior del mismo tipo en esta víctima
 		RemoveDoT(victim, type)
 
 		local endTime = Time() + duration
-		local tickDmg = dps  // Daño por segundo (tick de 1.0s)
+		local tickDmg = dps
 
-		Dbg("DoT START: " + type + " dps=" + dps + " dur=" + duration + " on " + uid)
+		this.Dbg("DoT START: " + type + " dps=" + dps + " dur=" + duration + " on " + uid)
 
 		::MaoLib.AddTimer(timerName, 1.0, function() {
 			if (!victim || !victim.IsValid()) {
@@ -190,12 +66,10 @@ getroottable()["MaoLib_Status_init_guard"] <- true;
 				::MaoLib.RemoveTimer(timerName)
 				return
 			}
-			// Aplicar daño
 			local atk = (attacker && attacker.IsValid()) ? attacker : victim
 			victim.TakeDamage(tickDmg.tointeger(), (1 << 1), atk)
 		})
 
-		// Track
 		if (!(uid in DoTTimers)) DoTTimers[uid] <- {}
 		DoTTimers[uid][type] <- timerName
 
@@ -224,29 +98,102 @@ getroottable()["MaoLib_Status_init_guard"] <- true;
 	}
 
 	// ============================================================
-	// INTERNAL
+	// SIMPLE KEY-VALUE REGISTRY (plano, sin stacking rules)
 	// ============================================================
-	function _GetDefault(type)
+	// Data[entindex][key][source] = { value, expire }
+	//
+	// Para stacking: el script consumidor itera las entries y decide.
+	// Esto evita magia oculta y hace el sistema predecible.
+	// ============================================================
+	Data = {}
+
+	function Set(player, key, value, duration = -1, source = "generic")
 	{
-		return (type in Types) ? Types[type].def : 0
+		if (!player || !player.IsValid() || !player.IsPlayer()) return false
+		if (typeof key != "string" || key == "") { DbgWarn("Set: key invalid"); return false }
+
+		local uid = player.entindex().tostring()
+		if (!(uid in Data)) Data[uid] <- {}
+		if (!(key in Data[uid])) Data[uid][key] <- {}
+
+		Data[uid][key][source] <- {
+			value = value,
+			expire = (duration < 0) ? -1.0 : (Time() + duration)
+		}
+
+		Dbg("SET " + key + "=" + value + " src=" + source + " dur=" + duration)
+		return true
 	}
 
-	function _CleanupExpired(uid, type)
+	function Get(player, key)
 	{
-		if (!(uid in Data) || !(type in Data[uid])) return
+		if (!player || !player.IsValid()) return null
+		local uid = player.entindex().tostring()
+		if (!(uid in Data) || !(key in Data[uid])) return null
+
+		_CleanupExpired(uid, key)
+		if (Data[uid][key].len() == 0) return null
+
+		// Devolvemos la tabla raw para que el consumidor decida cómo combinar
+		return Data[uid][key]
+	}
+
+	function Remove(player, key, source = "")
+	{
+		if (!player || !player.IsValid()) return false
+		local uid = player.entindex().tostring()
+		if (!(uid in Data) || !(key in Data[uid])) return false
+
+		if (source == "") {
+			delete Data[uid][key]
+		} else if (source in Data[uid][key]) {
+			delete Data[uid][key][source]
+		}
+
+		if (Data[uid][key].len() == 0) delete Data[uid][key]
+		if (Data[uid].len() == 0) delete Data[uid]
+		return true
+	}
+
+	function Clear(player)
+	{
+		if (!player || !player.IsValid()) return false
+		local uid = player.entindex().tostring()
+		if (uid in Data) delete Data[uid]
+		if (uid in DoTTimers) {
+			foreach (type, timerName in DoTTimers[uid]) {
+				::MaoLib.RemoveTimer(timerName)
+			}
+			delete DoTTimers[uid]
+		}
+		return true
+	}
+
+	function ClearAll()
+	{
+		Data = {}
+		ClearAllDoTs()
+	}
+
+	// ============================================================
+	// INTERNAL
+	// ============================================================
+	function _CleanupExpired(uid, key)
+	{
+		if (!(uid in Data) || !(key in Data[uid])) return
 		local now = Time()
 		local toRemove = []
-		foreach (source, entry in Data[uid][type]) {
+		foreach (source, entry in Data[uid][key]) {
 			if (entry.expire >= 0 && entry.expire <= now)
 				toRemove.append(source)
 		}
 		foreach (source in toRemove)
-			delete Data[uid][type][source]
-		if (Data[uid][type].len() == 0)
-			delete Data[uid][type]
+			delete Data[uid][key][source]
+		if (Data[uid][key].len() == 0)
+			delete Data[uid][key]
 		if (Data[uid].len() == 0)
 			delete Data[uid]
 	}
 }
 
-printl("[MaoLib.StatusEffects] v2.0 Minimalist loaded")
+printl("[MaoLib.StatusEffects] v3.0 Ultra-Minimalist loaded")

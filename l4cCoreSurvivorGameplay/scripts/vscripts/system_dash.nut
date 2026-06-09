@@ -14,9 +14,14 @@ getroottable()["SystemDash_init_guard"] <- true;
     // ============================================================
     // CONFIG
     // ============================================================
+    // Carga desde cfg/l4c_dash.cfg si existe.
+    // Formato: enabled = true | false
+    // ============================================================
     Config = {
         // Master switch — false = dash deshabilitado para TODOS
         ENABLED = true,
+
+        CONFIG_PATH = "cfg/l4c_dash.cfg",
 
         SOUND = {
             DASH = ["Melee.Miss"],
@@ -49,6 +54,45 @@ getroottable()["SystemDash_init_guard"] <- true;
     },
 
     PLAYER_STATE = {}
+
+    // ============================================================
+    // CONFIG LOADER
+    // ============================================================
+    function LoadConfig() {
+        local path = this.Config.CONFIG_PATH
+        local raw = null
+        try { raw = FileToString(path) } catch(e) {}
+
+        if (raw == null || raw == "") {
+            // Crear archivo default
+            local defaultCfg = "// L4C Dash System Config\n// Set to false to disable dash for all survivors\nenabled = true\n"
+            try { StringToFile(path, defaultCfg) } catch(e) {}
+            this.Dbg("Config file created at " + path)
+            return
+        }
+
+        // Parse simple: buscar "enabled = true/false"
+        foreach (line in split(raw, "\n")) {
+            local trimmed = strip(line)
+            if (trimmed.len() == 0 || trimmed[0] == '/' || trimmed[0] == '#') continue
+
+            local parts = split(trimmed, "=")
+            if (parts.len() < 2) continue
+
+            local key = strip(parts[0])
+            local val = strip(parts[1])
+
+            if (key == "enabled") {
+                if (val == "false" || val == "0") {
+                    this.Config.ENABLED = false
+                    this.Dbg("Config: dash DISABLED via " + path)
+                } else {
+                    this.Config.ENABLED = true
+                    this.Dbg("Config: dash ENABLED via " + path)
+                }
+            }
+        }
+    }
 }
 
 function SystemDash::Log(msg, level = "debug") {
@@ -213,6 +257,8 @@ function SystemDash::GetDashVector(player, buttons) {
 }
 
 function SystemDash::Init() {
+    this.LoadConfig()
+
     foreach (snd in this.Config.SOUND.DASH) {
         PrecacheSound(snd)
     }

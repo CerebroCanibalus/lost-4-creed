@@ -223,11 +223,10 @@ catbor_hellhound <-
 		if (!survivor || !survivor.IsValid()) return
 		// Delegar al DoT Subsystem de MaoLib
 		local SE = ::MaoLib.StatusEffects
-		SE.ApplyDoT(survivor, "dot_bleed", "hellhound_bleed",
+		SE.ApplyDoT(survivor, "dot_bleed",
 			settings.bleed_damage_per_tick.tofloat(),   // DPS = dmg/tick (tick_interval=1.0)
 			settings.bleed_duration,                     // duración
-			null,                                         // sin attacker
-			SE.DOT_TARGET_SURVIVOR)                       // solo survivors
+			null)                                         // sin attacker
 		printl("[HELLHOUND] Bleed applied to survivor " + survivor.GetEntityIndex() +
 			" for " + settings.bleed_duration + "s (DoT Subsystem)")
 	}

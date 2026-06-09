@@ -84,6 +84,10 @@ const LASER_UPGR = 4;
         {
           local iPing = NetProps.GetPropIntArray(playerManager, "m_iPing", player.GetEntityIndex());
           if( iPing > Config.pingThreshold)   return; // could probably try to add the ping value to DoEntFire? Maybe? But how?
+          
+          // Registrar timestamp del disparo REAL — el crouch workaround usa esto
+          lastWeaponFireTime[player] <- Time()
+          
           DoRecoilLogic( player, params.weapon );
         }
       }
@@ -91,6 +95,10 @@ const LASER_UPGR = 4;
 
   // Rate-limit para el workaround de crouch
   lastRecoilTime = {}  // [player] = timestamp
+  
+  // Timestamp del último weapon_fire REAL por jugador
+  // El crouch workaround solo aplica recoil si hubo un disparo real recientemente
+  lastWeaponFireTime = {}  // [player] = timestamp
 
   function DoRecoilLogic( plr, wpn )
   {
@@ -123,12 +131,18 @@ const LASER_UPGR = 4;
         player.SnapEyeAngles(player.EyeAngles() + value["targetAdd"]);
       }
       // ── CROUCH WORKAROUND: engine interrumpe weapon_fire al agacharse ──
-      // Si el jugador sigue atacando pero los ciclos se agotaron,
-      // re-disparar el cálculo de recoil (con rate-limit 0.08s)
+      // Solo re-disparar recoil si hubo un weapon_fire REAL recientemente.
+      // Esto evita recoil fantasma cuando: sin munición, en cooldown, recargando, etc.
       else if (player.IsValid() && (player.GetButtonMask() & 1) != 0)
       {
         local now = Time()
-        if (!(player in lastRecoilTime) || now - lastRecoilTime[player] > 0.08)
+        
+        // Verificar que hubo un disparo real en los últimos 0.15s
+        local hadRealFire = (player in lastWeaponFireTime) && 
+                            (now - lastWeaponFireTime[player] < 0.15)
+        
+        if (hadRealFire && 
+            (!(player in lastRecoilTime) || now - lastRecoilTime[player] > 0.08))
         {
           local weapon = player.GetActiveWeapon()
           if (weapon && weapon.IsValid())
@@ -349,6 +363,7 @@ const LASER_UPGR = 4;
  		MaoLib.RemoveTimer("c_lerp_tick")
  		::YsReworkedRecoil.crouchState.clear()
  		::YsReworkedRecoil.lastRecoilTime.clear()
+ 		::YsReworkedRecoil.lastWeaponFireTime.clear()
  	}
 }
 

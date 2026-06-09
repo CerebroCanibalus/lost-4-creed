@@ -1,0 +1,99 @@
+# ============================================================
+# L4C — Lost 4 Creed
+# GitIgnore: Solo scripts y configuración al repo.
+# Binarios pesados (modelos, texturas, sonidos) se excluyen.
+# ============================================================
+
+# --------------------------------------------------
+# SOURCE ENGINE BINARIOS PESADOS
+# --------------------------------------------------
+# Modelos
+*.mdl
+*.dx90.vtx
+*.dx80.vtx
+*.sw.vtx
+*.vvd
+*.phy
+*.ani
+
+# Texturas / Materiales
+*.vtf
+*.vmt
+
+# Sonidos (WAV mono/stereo, MP3)
+*.wav
+*.mp3
+
+# Videos
+*.bik
+
+# Archivos compilados VPK
+*.vpk
+
+# Partículas compiladas
+*.pcf
+
+# Nav meshes (se regeneran)
+*.nav
+
+# --------------------------------------------------
+# CACHES Y TEMPORALES
+# --------------------------------------------------
+*.cache
+*.tmp
+*.temp
+*.log
+
+# Directorios de salida/compilación
+compiled/
+build/
+out/
+dist/
+
+# --------------------------------------------------
+# OPENCODE / EDITOR
+# --------------------------------------------------
+.opencode/
+.vscode/
+.idea/
+
+# --------------------------------------------------
+# SISTEMA
+# --------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --------------------------------------------------
+# SCRIPTS Y CONFIGS QUE SÍ VAN AL REPO
+# (Asegurar que nunca se ignoren por accidente)
+# --------------------------------------------------
+!*.nut
+!*.nuc
+!*.txt
+!*.cfg
+!*.ini
+!*.json
+!*.jsonc
+!*.ps1
+!*.bat
+!*.cmd
+!*.md
+
+# Archivos de build del proyecto
+!Makefile
+!CMakeLists.txt
+
+# Herramientas del repo (scripts de build, validación)
+!tools/**/*.nut
+!tools/**/*.txt
+!tools/**/*.cfg
+!tools/**/*.bat
+!tools/**/*.ps1
+!tools/**/*.md
+
+# Testing
+!testing/**/*.ps1
+!testing/**/*.nut
+!testing/**/*.txt
+!testing/**/*.cfg

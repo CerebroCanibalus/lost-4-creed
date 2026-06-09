@@ -128,9 +128,7 @@
         
         // Delegar al DoT Subsystem — sangra SI, commons y bosses
         local SE = ::MaoLib.StatusEffects
-        SE.ApplyDoT(victim, "dot_bleed", "melee_bleed",
-            BleedDPS, BleedDuration, attacker,
-            SE.DOT_TARGET_SI | SE.DOT_TARGET_COMMON | SE.DOT_TARGET_BOSS)
+        SE.ApplyDoT(victim, "dot_bleed", BleedDPS, BleedDuration, attacker)
     }
     
     // ============================================================

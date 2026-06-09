@@ -25,8 +25,10 @@ IncludeScript("explosives_system", getroottable());
 IncludeScript("feedback_system", getroottable());
 
 // Items: Auto upgrade, held cans, ammo limits, adrenaline reload, overdose, disarm
-// (item_buffs DESACTIVADO — equipment effects merged a l4cCoreSurvivorGameplay/system_perks_unified.nut)
 IncludeScript("items_system", getroottable());
+
+// Item Buffs: Equipment passive effects (medkit AoE heal, gnome ammo/adrenaline, etc.)
+IncludeScript("item_buffs", getroottable());
 
 // Melee Base: Real reload, breakable melees
 IncludeScript("melee_base_system", getroottable());
