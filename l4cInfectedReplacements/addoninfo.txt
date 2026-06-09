@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Infected Replacement Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features new infected models and sounds"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

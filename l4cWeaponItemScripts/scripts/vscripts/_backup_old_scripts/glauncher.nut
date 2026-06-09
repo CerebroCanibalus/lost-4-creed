@@ -1,0 +1,6 @@
+Convars.SetValue("grenadelauncher_velocity", 900)
+Convars.SetValue("grenadelauncher_radius_kill", 140)
+Convars.SetValue("grenadelauncher_radius_stumble", 200)
+Convars.SetValue("grenadelauncher_damage", 1500)
+Convars.SetValue("grenadelauncher_ff_scale", 0.06)
+Convars.SetValue("grenadelauncher_ff_scale_self", 0.18)

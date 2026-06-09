@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Item and Guns Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features new weapon and item animations and models"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

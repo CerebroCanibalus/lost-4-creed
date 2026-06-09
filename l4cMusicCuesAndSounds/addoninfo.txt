@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Music n Cues Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features the Lost 4 Creed soundtrack and cue events"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - HUD n GUI Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features a new HUD for the game"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

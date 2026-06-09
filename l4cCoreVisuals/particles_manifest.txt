@@ -1,0 +1,19 @@
+particles_manifest
+{
+	// === Core Effect Particles ===
+	file	"!particles/blood_fx.pcf"
+	file	"!particles/fire_01.pcf"
+	file	"!particles/impact_fx.pcf"
+	file	"!particles/insect_fx.pcf"
+	file	"!particles/rain_fx.pcf"
+	file	"!particles/rain_storm_fx.pcf"
+	file	"!particles/screen_fx.pcf"
+	file	"!particles/smoker_fx.pcf"
+	file	"!particles/spitter_fx.pcf"
+	file	"!particles/steam_fx.pcf"
+	file	"!particles/survivor_fx.pcf"
+	file	"!particles/water_fx.pcf"
+	file	"!particles/weapon_fx.pcf"
+	file	"!particles/weapon_fx_ex.pcf"
+
+}

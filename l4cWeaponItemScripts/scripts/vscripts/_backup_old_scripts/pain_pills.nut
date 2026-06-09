@@ -1,0 +1,1 @@
+Convars.SetValue("pain_pills_decay_rate", 0.24)

@@ -1,0 +1,25 @@
+{
+    "$schema":  "https://opencode.ai/config.json",
+    "lsp":  {
+                "squirrel":  {
+                                 "command":  [
+                                                 "D:\\Software\\SourceStuff\\addons\\tools\\squirrel-lsp\\bin\\squirrel-lsp.exe",
+                                                 "--stdio"
+                                             ],
+                                 "extensions":  [
+                                                    ".nut"
+                                                ],
+                                 "initialization":  {
+                                                        "includePaths":  [
+                                                                             "D:/Software/SourceStuff/addons/l4cCoreAddon/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/l4cCoreSurvivorGameplay/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/l4cInfectedGameplay/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/l4cWeaponItemScripts/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/l4cEnvironmentCore/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/l4cSurvivorsCast/scripts/vscripts",
+                                                                             "D:/Software/SourceStuff/addons/tools/squirrel-lsp"
+                                                                         ]
+                                                    }
+                             }
+            }
+}

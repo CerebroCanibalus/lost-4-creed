@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Custom Infected"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features completely new infected"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

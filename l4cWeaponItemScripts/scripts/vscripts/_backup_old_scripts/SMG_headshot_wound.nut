@@ -1,0 +1,1 @@
+Convars.SetValue("z_head_damage_causes_wounds", 1);

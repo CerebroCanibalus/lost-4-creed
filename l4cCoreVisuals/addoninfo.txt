@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Graybox Aesthetics"
+	AddonVersion        "2.2"
+	AddonDescription    "Entire visual conversion for models, textures, shaders, particles..."
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

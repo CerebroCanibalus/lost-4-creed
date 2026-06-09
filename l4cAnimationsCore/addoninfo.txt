@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Animations Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features the animations of the mod (REQUIRES XDReanims)"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

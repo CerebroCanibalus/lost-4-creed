@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Ambience Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features the ambience sounds of the mod"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}

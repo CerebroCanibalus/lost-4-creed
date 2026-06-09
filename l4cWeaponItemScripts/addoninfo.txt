@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "Lost 4 Creed - Gunplay Addon"
+	AddonVersion        "2.2"
+	AddonDescription    "This addon features weapon and items mechanics and gameplay rebalances"
+	AddonAuthor         "by Beria and Richardhaifer"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}
