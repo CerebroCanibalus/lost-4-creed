@@ -1,8 +1,8 @@
 // ============================================================
-// system_dash.nut — Dash System (Consultivo)
+// system_dash.nut — Dash System v2.0
+// Todos los supervivientes pueden dash por defecto.
+// Config para deshabilitar globalmente o por personaje.
 // ============================================================
-// Capa 3: Extraido de system_movement.nut
-// Consulta CharacterSystem para dashEnabled en lugar de DisabledPlayers
 
 if ("SystemDash_init_guard" in getroottable()) return;
 getroottable()["SystemDash_init_guard"] <- true;
@@ -11,7 +11,13 @@ getroottable()["SystemDash_init_guard"] <- true;
     Debug = 1
     function Dbg(msg) { if (Debug) printl("[Dash][DEBUG] " + msg) }
 
+    // ============================================================
+    // CONFIG
+    // ============================================================
     Config = {
+        // Master switch — false = dash deshabilitado para TODOS
+        ENABLED = true,
+
         SOUND = {
             DASH = ["Melee.Miss"],
             DASH_RECHARGE = ["Buttons.blip1"],
@@ -66,18 +72,31 @@ function SystemDash::CleanupPlayerState(userid) {
     }
 }
 
+// ============================================================
+// CanPlayerDash — AHORA: todos los supervivientes pueden dash
+// A menos que:
+//   1. El master switch (ENABLED) esté en false
+//   2. El personaje tenga dashEnabled = false en CharacterSystem (opcional)
+//   3. Estén incapacitados, colgando, etc.
+// ============================================================
 function SystemDash::CanPlayerDash(player, state) {
+    if (!this.Config.ENABLED) return false
     if (state.dashCharges <= 0) return false
     if (!::MaoLib.IsAlive(player)) return false
 
-    // Consultar dashEnabled del CharacterSystem (source of truth)
-    // Si el personaje no se puede identificar → denegar dash por seguridad
-    local charId = ::CharacterSystem.GetCharacterId(player)
-    if (!charId || !(charId in ::CharacterSystem.BaseAttributes))
-        return false
-    local attrs = ::CharacterSystem.BaseAttributes[charId]
-    if ("dashEnabled" in attrs && attrs.dashEnabled == false)
-        return false
+    // Opcional: consultar CharacterSystem si existe
+    // Si no existe CharacterSystem, permitir por defecto
+    if ("CharacterSystem" in getroottable()) {
+        local cs = ::CharacterSystem
+        if ("GetCharacterId" in cs && "BaseAttributes" in cs) {
+            local charId = cs.GetCharacterId(player)
+            if (charId && charId in cs.BaseAttributes) {
+                local attrs = cs.BaseAttributes[charId]
+                if ("dashEnabled" in attrs && attrs.dashEnabled == false)
+                    return false
+            }
+        }
+    }
 
     return !(
         NetProps.GetPropInt(player, "m_hGroundEntity") == this.CONSTANTS.INVALID_GROUND_ENTITY ||
@@ -96,12 +115,7 @@ function SystemDash::CanPlayerDash(player, state) {
 function SystemDash::Think() {
     local now = Time()
 
-    local players = []
     foreach (player in ::MaoLib.YieldSurvivors()) {
-        players.append(player)
-    }
-
-    foreach (player in players) {
         if (!player || !player.IsValid()) continue
 
         local userid = player.GetPlayerUserId()
@@ -170,13 +184,15 @@ function SystemDash::PerformDash(player, state, buttons) {
     local effortSnd = effortSounds[RandomInt(0, effortSounds.len() - 1)]
     EmitAmbientSoundOn(effortSnd, 0.7, 75, RandomInt(95,105), player)
 
-    // Polvo al dashear — MaoLib_VFX maneja Start + ciclo de vida correctamente
-    ::MaoLib_VFX.SpawnParticle(
-        player.GetOrigin() + Vector(0, 0, 4),
-        this.Config.FEEDBACK.DUST_PARTICLE,
-        0.3,
-        "gameplay"
-    )
+    // Polvo al dashear
+    if ("MaoLib_VFX" in getroottable()) {
+        ::MaoLib_VFX.SpawnParticle(
+            player.GetOrigin() + Vector(0, 0, 4),
+            this.Config.FEEDBACK.DUST_PARTICLE,
+            0.3,
+            "gameplay"
+        )
+    }
 
     this.Log("Dash by " + player.GetPlayerUserId() + " | Charges: " + state.dashCharges, "info")
 }
@@ -211,7 +227,7 @@ function SystemDash::Init() {
         ::SystemDash.Think()
     })
 
-    this.Log("Dash system initialized", "info")
+    this.Log("Dash system initialized — ENABLED=" + this.Config.ENABLED, "info")
 }
 
 ::SystemDash.Init()
@@ -245,6 +261,5 @@ function SystemDash::Init() {
 }
 __CollectGameEventCallbacks(::SystemDash.Events)
 
-printl("[SystemDash] v1.1 Loaded — Dash global (SHIFT+WASD), 2 charges, 2.6s recharge")
-printl("[SystemDash]   dashEnabled source: CharacterSystem.BaseAttributes | Particle: MaoLib_VFX.SpawnParticle")
-printl("[SystemDash]   Debug=" + ::SystemDash.Debug)
+printl("[SystemDash] v2.0 Loaded — Dash global para TODOS los supervivientes")
+printl("[SystemDash]   ENABLED=" + ::SystemDash.Config.ENABLED + " | SHIFT+WASD para dash | 2 cargas")
