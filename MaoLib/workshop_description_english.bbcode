@@ -1,0 +1,176 @@
+[h1]MaoLib - L4D2 VScript Framework[/h1]
+[i]Version 2.2 | Standalone VScript library for Left 4 Dead 2.[/i]
+[b]Zero external dependencies. Not VSLib. Not Lua. Pure Squirrel 3.0 on the native Source API.[/b]
+
+[hr][/hr]
+
+[h2]What is MaoLib?[/h2]
+A modular VScript framework for L4D2. Originally the backbone of Lost 4 Creed (16 addons, 3300+ lines of gameplay), now a standalone library.
+
+[b]10 subsystems:[/b]
+[list]
+[*] Centralized timer manager (single logic_timer, no AddThinkToEnt)
+[*] NavMesh pathfinding: high ground, choke points, flanking, LOS, flow distance
+[*] AoE system with selector/applicator pipeline
+[*] Visual effects: particles, explosions, impacts, screenshake
+[*] HUD messaging with throttle, queue, color presets
+[*] Per-player state registry (auto-cleanup)
+[*] Movement modifiers: speed/friction stacking with auto-expiry
+[*] Status Effects v3.0: DoT + flat key-value registry
+[*] Map utilities: spawning, director helpers, entity finders
+[*] Timer monitoring and leak detection
+[/list]
+
+All code is native VScript - no wrappers, no DLLs.
+
+[hr][/hr]
+
+[h2]MaoLib vs. Other Libraries[/h2]
+
+[h3]vs. HeavyUtils (predecessor)[/h3]
+HeavyUtils is the single-file utility (~50 functions) that inspired MaoLib's core loop. MaoLib extends far beyond:
+
+[table]
+[tr][th]Feature[/th][th]HeavyUtils[/th][th]MaoLib[/th][/tr]
+[tr][td]Architecture[/td][td]Monolithic[/td][td]11 modular files[/td][/tr]
+[tr][td]Timer system[/td][td]None[/td][td]Full centralized manager with stats[/td][/tr]
+[tr][td]NavMesh tools[/td][td]None[/td][td]High ground, chokes, flanking, flow distance[/td][/tr]
+[tr][td]Area of Effect[/td][td]None[/td][td]4 selectors + 8 applicators[/td][/tr]
+[tr][td]HUD system[/td][td]None[/td][td]4 channels with throttle and colors[/td][/tr]
+[tr][td]Player state[/td][td]None[/td][td]Key-value per UID, auto-cleanup[/td][/tr]
+[tr][td]Modifiers[/td][td]None[/td][td]Speed/friction stacking, multi-source[/td][/tr]
+[tr][td]Status/DoT[/td][td]None[/td][td]DoT subsystem + flat registry[/td][/tr]
+[tr][td]VFX[/td][td]None[/td][td]Budget-based priority, safe spawning[/td][/tr]
+[tr][td]Config parser[/td][td]Raw compilestring (unsafe)[/td][td]Allowlist-validated, injection-safe[/td][/tr]
+[tr][td]Documentation[/td][td]Minimal comments[/td][td]Full API per module + README[/td][/tr]
+[/table]
+
+[b]vs. VSLib[/b]
+[table]
+[tr][th]Aspect[/th][th]VSLib[/th][th]MaoLib[/th][/tr]
+[tr][td]Philosophy[/td][td]OOP wrappers over entities[/td][td]Direct native calls + helpers[/td][/tr]
+[tr][td]Timer management[/td][td]None[/td][td]Full centralized system[/td][/tr]
+[tr][td]Runtime state[/td][td]Maintains entity table[/td][td]Stateless (except timers)[/td][/tr]
+[tr][td]Performance[/td][td]Wrapper overhead[/td][td]Zero overhead[/td][/tr]
+[tr][td]Debugging[/td][td]Stack through wrappers[/td][td]Direct to modder's code[/td][/tr]
+[/table]
+
+[i]Note:[/i] VSLib's repository is used in Lost 4 Creed only as a method-verification reference. [b]MaoLib does not use VSLib at runtime.[/b] Both can coexist.
+
+[hr][/hr]
+
+[h2]Module Architecture[/h2]
+[code]director_base_addon.nut     <- Entry point (auto-loads all)
++-- maolib.nut           <- Core: timers, iterators, math, config
+    +-- maolib_timers_cleanup  <- Monitoring + leak detection
+    +-- maolib_vfx.nut         <- Particles, explosions, screenshake
+    +-- maolib_navutils.nut    <- NavMesh: LOS, high ground, chokes
++-- maolib_state.nut     <- PlayerState per UID
++-- maolib_hud.nut       <- Chat, center, hint, game_text
++-- maolib_modifiers.nut <- Speed/friction stacking
++-- maolib_aoe.nut       <- Selectors + applicators
++-- maolib_status.nut    <- DoT + flat registry
++-- maolib_mapper.nut    <- Map utilities[/code]
+
+Each module is independent. Include what you need.
+
+[hr][/hr]
+
+[h2]Technical Highlights[/h2]
+
+[h3]Timer Manager[/h3]
+[code]MaoLib.AddTimer("name", interval, callback)    // Recurrent
+MaoLib.DelayCall(callback, delay)               // One-shot
+MaoLib.RemoveTimer() / PauseTimer() / ResumeTimer()
+MaoLib.ClearAllTimers()                          // On round_end[/code]
+Single logic_timer (immune to AddThinkToEnt). All callbacks in ::MaoLib.Timers{}. Method detachment protection via closure wrapper. Per-timer stats. 100 Hz max resolution.
+
+[h3]Damage Recursion Guard (MANDATORY)[/h3]
+TakeDamage() inside player_hurt/infected_hurt triggers another event. Without a guard: infinite recursion.
+[code]_processingDamageEvent = false
+function OnGameEvent_player_hurt(params) {
+    if (_processingDamageEvent) return
+    _processingDamageEvent = true
+    // ... TakeDamage() ...
+    _processingDamageEvent = false
+}[/code]
+Use a single flag for both events to prevent cross-event ping-pong (player_hurt -> AoE hits infected -> infected_hurt -> and back).
+
+[h3]Secure Config Parser[/h3]
+Unlike raw compilestring(), MaoLib validates input against a character allowlist before parsing. Control characters (\\n, \\r, \\t) are rejected, preventing injection via untrusted input.
+
+[h3]AoE Architecture (Select -> Apply)[/h3]
+[code]// Phase 1: Select targets
+local targets = MaoLib.AoE.Select.Circle(origin, 500, {
+    className = "infected", aliveOnly = true, requireLOS = true
+})
+// Phase 2: Apply effect
+MaoLib.AoE.Apply.Damage(targets, 100, attacker, DMG_BULLET, {
+    falloff = "linear", origin = origin, radius = 500, minDamage = 10
+})[/code]
+[b]Selectors:[/b] Circle, Cone, Line, ExpandingCircle (shockwave).
+[b]Applicators:[/b] Damage, Heal, HealTemp, Stagger, Push, ModifierSpeed, ModifierFriction, Callback.
+
+[hr][/hr]
+
+[h2]Compatibility[/h2]
+[list]
+[*] [b]Versions:[/b] All L4D2 builds (VScript unchanged since 2012)
+[*] [b]Modes:[/b] All - Coop, Versus, Survival, Scavenge, Realism, Mutation, Campaign
+[*] [b]VSLib/HeavyUtils:[/b] Compatible, can coexist
+[*] [b]SourceMod:[/b] Compatible - different layer (.smx plugins)
+[*] [b]Other mods:[/b] Only adds ::MaoLib and ::MaoLib_VFX to root table
+[/list]
+
+[b]Known engine limitations (documented in README):[/b]
+[list]
+[*] info_particle_system needs effect_name at spawn - post-spawn __KeyValueFromString fails
+[*] ambient_generic.SetParent() unsupported - use SourceEntityName on info_target
+[*] LookupBone on "infected" CRASHES - use GetEffectPosition()
+[*] light_dynamic.SetOrigin() while on does not update visually - toggle TurnOff/On
+[*] ApplyAbsVelocityImpulse blocked on players - use Stagger() or NetProps
+[/list]
+
+[hr][/hr]
+
+[h2]Specifications[/h2]
+[table]
+[tr][th]Property[/th][th]Value[/th][/tr]
+[tr][td]Language[/td][td]Squirrel 3.0 (native Source VScript)[/td][/tr]
+[tr][td]Files[/td][td]11 .nut + README.md[/td][/tr]
+[tr][td]Lines of code[/td][td]~3300 (including API docs)[/td][/tr]
+[tr][td]Dependencies[/td][td]None - only L4D2 base[/td][/tr]
+[tr][td]Root namespaces[/td][td]::MaoLib, ::MaoLib_VFX, ::g_TimersCleanup[/td][/tr]
+[tr][td]Event registrations[/td][td]player_disconnect, round_end, mission_lost, map_transition[/td][/tr]
+[tr][td]Spawned entities[/td][td]1 logic_timer, 1 env_explosion (reusable)[/td][/tr]
+[tr][td]Cross-round state[/td][td]Fully cleaned[/td][/tr]
+[/table]
+
+[hr][/hr]
+
+[h2]Why Use MaoLib?[/h2]
+[b]1. Native.[/b] No abstraction. Stack traces go directly to your code.
+[b]2. Production-proven.[/b] Backbone of Lost 4 Creed (16 addons, thousands of players).
+[b]3. Modular.[/b] Load only what you need. Self-contained .nut files.
+[b]4. Secure.[/b] Allowlist-validated config. Leak detection. Recursion guard.
+[b]5. Self-contained.[/b] No DLLs, no binaries. Drop the VPK and go.
+[b]6. Documented.[/b] Every function has API docs with examples.
+
+[hr][/hr]
+
+[h2]Installation[/h2]
+[list=1]
+[*] Download the VPK
+[*] Place in [code]Left 4 Dead 2/left4dead2/addons/[/code]
+[*] Done - auto-loads on every map
+[/list]
+
+[h3]From your scripts[/h3]
+[code]IncludeScript("maolib", getroottable())
+// All MaoLib namespaces available[/code]
+
+[hr][/hr]
+
+[i]MaoLib v2.2 - Part of Lost 4 Creed. Standalone release for the L4D2 modding community.[/i]
+
+[url=https://discord.gg/NWPYT7MEEa]Discord: Lost 4 Creed Community[/url]

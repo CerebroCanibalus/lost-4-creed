@@ -1,2 +1,40 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalizacion de fin de linea
+* text=auto eol=lf
+
+# VScript - forzar LF, sin conversion
+*.nut   text eol=lf
+*.nuc   text eol=lf
+
+# Source de shaders
+*.hlsl  text eol=lf
+
+# PowerShell - CRLF obligatorio (Windows)
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+
+# Markdown y config
+*.md    text eol=lf
+*.cfg   text eol=lf
+*.json  text eol=lf
+
+# Binarios (por si alguien los anade sin querer)
+*.wav   binary
+*.mp3   binary
+*.vtf   binary
+*.vmt   binary
+*.mdl   binary
+*.vvd   binary
+*.vtx   binary
+*.ani   binary
+*.phy   binary
+*.bsp   binary
+*.nav   binary
+*.vpk   binary
+*.pcf   binary
+*.bik   binary
+*.exe   binary
+*.dll   binary
+*.zip   binary
+
+# Projects de Squirrel / compilar - en el VS Code
+.vscode/settings.json

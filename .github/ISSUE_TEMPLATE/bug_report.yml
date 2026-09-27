@@ -1,0 +1,89 @@
+name: Bug report
+description: Algo se rompe en tiempo de ejecución
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Los bugs de VScript sin salida de consola son casi imposibles de reproducir.
+        Pega el log.
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión del modpack
+      description: Tag o commit de `l4cCoreAddon/CHANGELOG.md`
+      placeholder: "v2.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: map
+    attributes:
+      label: Mapa
+      options:
+        - c1m1_hotel
+        - c1m2_streets
+        - c2m1_highway
+        - c2m2_fairgrounds
+        - c2m4_barns
+        - c3m2_swamp
+        - c3m3_shantytown
+        - Otro
+    validations:
+      required: true
+
+  - type: input
+    id: script
+    attributes:
+      label: Script o addon afectado
+      description: Si lo sabes, el `.nut` implicado
+      placeholder: l4cCoreAddon/scripts/vscripts/maolib.nut
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué pasó realmente
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Pasos para reproducir
+      description: Mínimo reproducible. Cuantos menos pasos, mejor.
+      placeholder: |
+        1. Entrar en c2m1_highway en coop local
+        2. Completar el evento del helicóptero
+        3. El Tank aparece dentro del edificio
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Salida de consola
+      description: Consola del desarrollador (`developer` console). Crítical.
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Comprobaciones
+      options:
+        - label: He leído `AGENTS.md` y el bug no está ya documentado ahí
+          required: true
+        - label: He ejecutado `.\testing\test_vscripts.ps1 -Full -Verbose` y describo abajo el resultado
+          required: true

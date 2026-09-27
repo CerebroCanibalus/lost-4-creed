@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Regla de eventos y load order
+    url: https://github.com/CerebroCanibalus/lost-4-creed/blob/main/AGENTS.md
+    about: La memoria del proyecto: load order, trampas de Squirrel y checklist.
+  - name: API de MaoLib
+    url: https://github.com/CerebroCanibalus/lost-4-creed/blob/main/docs/MaoLib.md
+    about: Antes de proponer algo, comprueba si MaoLib ya lo resuelve.
+  - name: Guía de contribución
+    url: https://github.com/CerebroCanibalus/lost-4-creed/blob/main/CONTRIBUTING.md
+    about: Reglas de estilo VScript y qué se valida antes de abrir un PR.

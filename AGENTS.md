@@ -15,7 +15,37 @@ Horror/coop modpack. Custom campaign + gameplay + VScript.
 `l4cInfectedGameplay` — Infected AI
 `l4cSurvivorsCast` — Survivor models
 
-**VPK:** `vpk.exe <folder>` → `<folder>.vpk` en PARENT dir. NO `vpk create folder output.vpk`.
+**VPK:** 🔴 **USAR SIEMPRE `Compile-VPKs.ps1`**, no `vpk.exe` directo. Output ordenado a `compiled/` + incremental caching + evita VPKs huérfanos en raíz. `vpk.exe` solo para debug rápido.
+
+---
+## 🖥️ ENTORNO — SIEMPRE LOCAL
+
+**ASUMIMOS SIEMPRE LISTEN SERVER / COOP LOCAL** (server y cliente = mismo proceso). NO dedicated.
+
+**Implicación:** conVars de render/cliente (`mat_*`, `r_*`, `cl_*`) SÍ funcionan desde VScript. No hace falta `env_tonemap_controller` ni entidades de mapa para FX visuales globales — un `Convars.SetValue()` basta.
+
+---
+## 🔴 REGISTRO DE CAMBIOS OBLIGATORIO
+
+**LEY CRÍTICA:** Tras cualquier cambio funcional, fix, refactor o migración de API, **actualizar `l4cCoreAddon/CHANGELOG.md` con fecha antes de commitear.**
+
+```markdown
+### [Fixed|Added|Changed|Removed] — YYYY-MM-DD
+- **Sistema/Archivo:** Descripción concisa. Impacto: X. Fix/razón: Y.
+```
+
+**NO omitir:** Hotfixes, reverts, migraciones de API, dead code removal, cambios de balance.
+**Sí omitir:** Typo en comentarios, formato puramente cosmético.
+
+---
+## 🔴 RECUPERACIÓN DE ARCHIVOS CORROMPIDOS
+
+**LEY CRÍTICA:** Si una tool corrompe un archivo (encoding, duplicados, pérdida de contenido), **NO seguir editando sobre él**. El agente DEBE:
+
+1. Informar al usuario qué archivo se corrompió y cómo.
+2. **Pedirle el archivo al usuario** (`read`, backup, o `git checkout -- <archivo>`) antes de continuar.
+3. No usar `write` para reescribir VScript grandes completos — usar `edit` con anclas verificadas.
+4. Verificar encoding tras edición grande (`file -i` o primeras líneas).
 
 ---
 ## ⚠️ LOAD ORDER
@@ -34,8 +64,7 @@ Horror/coop modpack. Custom campaign + gameplay + VScript.
 11. info_director BeginScript  → LocalScript (on demand)
 ```
 
-**DO priority:** `DirectorScript.DO ← MapScript.DO ← LocalScript.DO ← ChallengeScript.DO` (LOW→HIGH).
-Key missing → walk UP chain.
+**DO priority:** `DirectorScript.DO ← MapScript.DO ← LocalScript.DO ← ChallengeScript.DO` (LOW→HIGH). Key missing → walk UP chain.
 
 **Scope tree:**
 ```
@@ -53,19 +82,21 @@ MapScript (g_MapScript) ← mode, map, scriptedmode, finale
 **Hechos críticos:**
 - TODOS los `director_base_addon.nut` (mismo nombre, distintos VPKs) EJECUTAN. NO replace.
 - `l4cCoreAddon/director_base_addon.nut` DEBE cargar primero → provee MaoLib.
-- NO crear `mapspawn_addon.nut` a menos que sea esencial → contamina getroottable().
+- NO crear `mapspawn_addon.nut` salvo esencial → contamina getroottable().
 
 ---
 ## ⚠️ VERIFICACIÓN VSLIB → NATIVO
-NO USAMOS VSLib. Solo código NATIVO (VScript + MaoLib).
-Si ves `EntityOutputs`, `VSLib::*`, `Utils.*` en código → **reemplazar con nativos**.
+NO usamos VSLib en runtime. Solo NATIVO (VScript + MaoLib).
+Si ves `EntityOutputs`, `VSLib::*`, `Utils.*` en código activo → **reemplazar con nativos**.
 **Natives válidos:** `DoEntFire`, `EntFire`, `EmitSoundOn`, `StopSoundOn`, `EntFireByHandle`, `DispatchSpawn`, `NetProps.*`.
-**NavMesh:** `NavMesh.*` confirmados en este binario (GetNearestNavArea, NavAreaBuildPath, GetNavAreasInRadius, GetAllAreas, GetNavAreaCount, FindNavAreaAlongRay).
+**NavMesh:** `NavMesh.*` confirmados (GetNearestNavArea, NavAreaBuildPath, GetNavAreasInRadius, GetAllAreas, GetNavAreaCount, FindNavAreaAlongRay).
+
+**VSLib como verificación:** El repo VSLib (`references/vslib/`) se usa SOLO para confirmar qué métodos nativos existen en el binario. Si VSLib accede a un método directamente (ej. `_ent.GetEntityIndex()`), existe. Ver "Auditoría VSLib" en ELLIS.md.
 
 ---
 ## ⚠️ EVENTOS — 4 REGLAS
 
-> **⛔ `maolib_events.nut` fue ELIMINADO (23/05/2026).** No hay sistema central de eventos. Cada script gestiona los suyos.
+> **⛔ `maolib_events.nut` ELIMINADO (23/05/2026).** No hay sistema central de eventos. Cada script gestiona los suyos.
 
 ### R1: SIEMPRE tabla, NUNCA función global
 ```vscript
@@ -78,7 +109,7 @@ function OnGameEvent_hurt(p) { }                   // ❌ HIJACKEA
 → Registra TODO en global → sobrescribe tablas → CRASH.
 
 ### R3: Global `OnGameEvent_*` HIJACKEA evento
-Si existe función global + tabla registrada para mismo evento → global gana → tabla NUNCA recibe → CRASH.
+Si existe global + tabla registrada para mismo evento → global gana → tabla NUNCA recibe → CRASH.
 
 ### R4: Sintaxis METHOD `function Name()`, NUNCA property `Name = function()`
 ```vscript
@@ -95,7 +126,7 @@ Si existe función global + tabla registrada para mismo evento → global gana �
 | `function Helper()` global (no OnGameEvent_) | ✅ |
 
 ---
-## ⚠️ METHOD DETACHMENT (Squirrel Pitfall #1)
+## ⚠️ METHOD DETACHMENT (Pitfall #1)
 
 Pasar método de tabla como callback → pierde `this`.
 ```vscript
@@ -107,23 +138,21 @@ MaoLib.AddTimerSafe("n", 0.05, @() ::Table.Method())              // ✅
 
 ---
 ## ⚠️ LOOP-VARIABLE CLOSURE CAPTURE (Pitfall #2)
-
-Closure en loop captura variable POR REFERENCIA. Todos los closures comparten la misma binding.
+Closure en loop captura variable POR REFERENCIA. Todos comparten la misma binding.
 ```vscript
 // ❌ — 'ent' = null al disparar el timer
 while (ent = Entities.FindByClassname(ent, "infected")) {
-    MaoLib.AddTimer("t_"+ent.entindex(), 0.5, function() { Do(ent) })
+    MaoLib.AddTimer("t_"+ent.GetEntityIndex(), 0.5, function() { Do(ent) })
 }
 // ✅ — 'captured' es NUEVA binding cada iteración
 while (ent = Entities.FindByClassname(ent, "infected")) {
     local captured = ent
-    MaoLib.AddTimer("t_"+captured.entindex(), 0.5, function() { Do(captured) })
+    MaoLib.AddTimer("t_"+captured.GetEntityIndex(), 0.5, function() { Do(captured) })
 }
 ```
 
 ---
 ## ⚠️ SELF-CONTAINED OPS
-
 NO fragmentar lógica que depende de entidad VIVA en callbacks diferidos.
 - ❌ `EntFire("worldspawn","RunScriptCode",...)` — entindex expira
 - ❌ `DoEntFire("!self","RunScriptCode",...)` — self.Kill() ignorado
@@ -140,7 +169,6 @@ MaoLib.AddTimer("check", 0.5, function() {
 
 ---
 ## 🔴 DEBUG SYSTEM — OBLIGATORIO
-
 ```vscript
 ::MiScript <- {
     Debug = 1  // 0=silent, 1=verbose
@@ -157,7 +185,6 @@ Toda fn pública → `Dbg("ENTER/EXIT")`. Todo `return` temprano → explicar po
 
 ---
 ## 🔴 DirectorScript.X SCOPE BUG
-
 `IncludeScript("x", getroottable())` → variable en `getroottable()`, NO en `DirectorScript`.
 ```vscript
 DirectorScript.myVar.member  // ❌ null → crash
@@ -166,114 +193,18 @@ DirectorScript.myVar.member  // ❌ null → crash
 
 ---
 ## MAOLIB — DEPENDENCIA DURA
+Carga: `IncludeScript("maolib", getroottable())` + navutils, vfx, state, hud, modifiers, aoe, status, mapper.
+// input, cooldowns REMOVIDOS (9 Jun 2026) — ningún script activo los usa.
+// status_hooks ELIMINADO (9 Jun 2026) — incompatible con StatusEffects v3.0 plano.
 
-Carga: `IncludeScript("maolib", getroottable())` + navutils, vfx, input, state, cooldowns, hud, modifiers, aoe, status, status_hooks, mapper.
-
-Namespaces: `::MaoLib`, `::MaoLib.NavUtils`, `::MaoLib_VFX`, `::MaoLib.Input`, `::MaoLib.PlayerState`, `::MaoLib.Cooldowns`, `::MaoLib.HUD`, `::MaoLib.Modifiers`, `::MaoLib.AoE`, `::MaoLib.StatusEffects`, `::MaoLib.Mapper`
+Namespaces: `::MaoLib`, `::MaoLib.NavUtils`, `::MaoLib_VFX`, `::MaoLib.PlayerState`, `::MaoLib.HUD`, `::MaoLib.Modifiers`, `::MaoLib.AoE`, `::MaoLib.StatusEffects`, `::MaoLib.Mapper`
 
 ### 🔴 NUNCA `if ("MaoLib" in getroottable())` — SILENT KILLER
-
 Asume que MaoLib existe. Si falla, el script DEBE crashear con error visible. Un check condicional crea scripts zombie (cargan, no crashean, no hacen nada).
 
 **Excepciones (solo self-check):** `maolib.nut`, `maolib_navutils.nut`, `maolib_timers_cleanup.nut`
 
-### Method vs Global
-```
-// METHODS (entity.Method()):
-.IsValid() .GetHealth() .GetOrigin() .Kill() .EyePosition() .EyeAngles()
-.GetForwardVector() .entindex() .IsPlayer() .IsSurvivor() .Stagger()
-.SetHealthBuffer() .GetActiveWeapon() .GiveItem() .GiveAmmo()
-
-// GLOBALS (fn(entity)):
-IsPlayerABot() EntIndexToHScript() GetPlayerFromUserID() Time() UniqueString()
-```
-
-### Iteradores: `YieldSurvivors()` `YieldSpecials()` `YieldWitches()` `YieldPlayers()`
-### Utils: `GetScope(e)` `IsReal(e)` `IsAlive(e)` `IsAlivePlayer(p)` `DistanceBetween(p1,p2)` `min/max(a,b)` `clamp(min,v,max)` `Probability(25)→bool` `startswith(s,p)` `Replace(s,p,r)` `printf(fmt,...)`
-### Witch: `SetWitchAnger(w,0.5)` `GetWitchAnger(w)`
-### Target: `GetTarget(e)/ForceTarget(e,t)` `GetTargetMisc(i)/ForceTargetMisc(i,t)`
-
-### Timer Manager — SIEMPRE usar, NUNCA logic_timer/AddThinkToEnt
-```
-AddTimer(name,int,fn)  AddTimerForce/Safe/Auto(name,int,fn)
-RemoveTimer(name)  PauseTimer/ResumeTimer(name)  IsTimerActive(name)
-ClearAllTimers()  PrintTimerStats()
-DelayCall(fn,sec)  DelayCallOpt(fn,sec)  // ⚠️ DelayCall=one-shot, AddTimer=RECURRENTE
-```
-**Cleanup obligatorio:** Cada script DEBE limpiar timers en `round_end`/`mission_lost`/`map_transition`. `maolib_timers_cleanup.nut` es MONITOR ONLY.
-
-### 🔥 CRÍTICO: AddTimer vs DelayCall
-`AddTimer` = recurrente (dispara cada `interval` PARA SIEMPRE). `DelayCall` = one-shot (auto-remove).
-```vscript
-MaoLib.AddTimer("x", 0.3, fn)  // ❌ INFINITO si querías one-shot
-MaoLib.DelayCall(fn, 0.3)      // ✅ one-shot
-```
-
----
-## MAOLIB API (compacta)
-
-### NavUtils
-`GetNearestNavArea(pos,maxDist,blocked)` `BuildPath(start,end,team)→array` `TravelDistance(start,end,maxDist)` `HasLineOfSight(s,e,ignore)` `CanSeeEntity(viewer,target)` `FindHighGround(c,R,minH)` `FindChokePoints(c,R)` `FindFlankingRoutes(t,R,side)` `FindRockSpots(tank,surv,R=1500)` `FindMostVulnerableSurvivor(surv)` `AreSurvivorsGrouped(surv,maxD)` `GetFlowDistanceToSurvivors(e,surv)` `IsAheadOfSurvivors(e,surv)` `IsNearFire(e,R=200)` `CountNearbyInfernos(e,R=500)`
-
-### Input (tracker central, 1 timer 0.05s)
-```vscript
-MaoLib.Input.Register(uid, btn, "pressed|released|held", fn)
-MaoLib.Input.Unregister(uid, btn, eventType)
-// btns: IN_SPEED=131072, IN_USE=32, IN_ATTACK2=512, IN_RELOAD=32
-```
-
-### PlayerState
-`Set/Get/Delete(uid,key,val?)` `Clear(uid)` `Has(uid,key)` `RegisterOnClear(name,cb)`
-Convención: prefijar keys con script (`jaime_`, `brock_`, etc.)
-
-### Cooldowns
-`Start(uid,name,dur)` `IsReady(uid,name)→bool` `GetRemaining(uid,name)→float` `Reset/ResetAll(uid)` `AutoNotify(uid,name,msg,sound,hudType)`
-
-### HUD
-`Notify(player,msg,{mode,typeKey,throttle,duration,color,sound,priority})` `NotifyAll(msg,opts)` `Clear(player,ch)` `ColorGreen/Red/Yellow(text)`
-
-### Modifiers (speed/friction — think 0.3s activo)
-```vscript
-RegisterSpeed(player,mult,dur,source)  // 1.0=base, 0.85=-15%, -1=perma
-RegisterFriction(player,fric,dur,source)  // >1=más lento, final=MAX
-GetSpeedMultiplier(p)→float  GetFriction(p)→float
-ClearAll(p)  ClearSource(p,src)  ListActive(p)
-```
-**Arquitectura:** Modifiers registra+computa. `system_perks_unified.nut` consume.
-
-### AoE (Selector→Aplicador)
-```vscript
-// Selectores → array
-MaoLib.AoE.Select.Circle(origin,R,{className,filter,requireLOS,maxResults,aliveOnly})
-MaoLib.AoE.Select.Cone(origin,dir,halfAngle,maxDist,opts)
-MaoLib.AoE.Select.Line(origin,dir,len,width,opts)
-MaoLib.AoE.Select.ExpandingCircle(origin,maxR,dur,pulses,onPulse)→timerName
-
-// Aplicadores
-MaoLib.AoE.Apply.Damage(tgts,dmg,attacker,type,{falloff,origin,radius,minDamage,onHit})
-MaoLib.AoE.Apply.Heal/HealTemp(tgts,amount) .Stagger(tgts) .Push(tgts,force)
-MaoLib.AoE.Apply.ModifierSpeed/Friction(tgts,mult/fric,dur,src) .Callback(tgts,fn)
-```
-
-### StatusEffects v2.0 (buffs/debuffs — hooks automáticos)
-**Convención:** Movimiento→Modifiers. Todo lo demás→StatusEffects.
-```vscript
-Apply(entity, cat, src, val, dur, opts?)  // opts: {targetFlags}
-Get(entity, cat, targetFlags?)  Remove(entity, cat, src)  ClearAll(entity)
-ApplyDoT(entity, "dot_bleed", src, dps, dur, attacker, targetFlags)
-RegisterCallback(src, "onExpire", fn)  ListActive(entity)
-```
-**Hooks automáticos:** `player_hurt`(damage_in/out,lifesteal,fire_immunity) `infected_hurt`(ci_damage_in/out) `weapon_fire`(fire_rate,melee_speed,ammo) `entity_shoved`/`player_shoved`(stagger_immunity,shove_penalty) `heal_success`/`revive_success`(heal_given/received) `pills_used`(heal_received) `player_spawn`(max_health)
-
-**Target Flags:** `DOT_TARGET_SURVIVOR(1)|COMMON(2)|SI(4)|BOSS(8)|ALL(15)`
-
-### Mapper (map utils)
-`ConnectOutput/DisconnectOutput(ent,output,cbName)` `AddOutput(src,out,tgt,in,param,delay,times)` `SpawnWithOutput(class,kv,outputs)` `ApplyDirectorOptions(opts)` `ShuffleArray(arr)` `SpawnReducedProps(tbl,density,fn)` `GetClosestSurvivor(pos,incap,dead)` `TriggerMegaMob()` `IsAnyoneInCombat()` `ForbidTarget/AllowTarget(ent)` `StaggerPlayer(p,from)` `GiveTempHealth(p,amt)` `ExtinguishPlayer(p)` `RevivePlayer(p,defib)` `FindNearest(class,pos,R)` `FindByClassnameWithin(class,pos,R,cb)` `FireCustomEvent(id)`
-
-### VFX v2.2
-`SpawnParticle(pos,fx,life=3,prio)→handle` `SpawnParticleOnEntity(e,fx,attach,life,prio)` `SpawnTrail(e,fx,attach,prio)→handle` `StopParticle(p,fade)` `SpawnRing/Spiral/Wave/Curve/CircleFilled` `SpawnExplosion(pos,"small|med|large")` `SpawnImpact(pos,norm,"blood|concrete|metal|wood|dirt")` `SpawnDecal(pos,norm,"blood|scorch|etc")` `EmitSound(ent,path,vol,pitch)` `EmitSoundAt(pos,path,vol,pitch)` `EmitSoundOnClient(player,path)` `ScreenShake(pos,amp,freq,dur,R)` `ScreenEffect(p,"blood|adrenaline|bashed",dur)` `GetEffectPosition(e)` `SafeKill(e,delay)` `IsValidPosition(pos)` `Keyframes.Animate/LerpVector/LerpFloat`
-
-⚠️ NEVER `LookupBone` en "infected" → usar `GetEffectPosition(e)`. Budget: `critical`(8/s) `gameplay`(12/s) `ambient`(4/s).
+> 📖 **API completa de MaoLib (NavUtils, PlayerState, HUD, Modifiers, AoE, StatusEffects, Mapper, VFX, natives, netprops) → ver ELLIS.md.**
 
 ---
 ## 🧪 TEST — `testing/test_vscripts.ps1`
@@ -287,6 +218,8 @@ RegisterCallback(src, "onExpire", fn)  ListActive(entity)
 | `Word = function(` en events table | 🟡 HIGH |
 
 Run: `.\testing\test_vscripts.ps1 -Full -Verbose`
+
+> **No crear scripts Python ad-hoc para validar VScript.** `test_vscripts.ps1` es la herramienta oficial. Si reporta un issue, investigar con lectura de código (`read`, `grep`) antes de descartarlo como falso positivo.
 
 ---
 ## 🗺️ l4cMapRefresh
@@ -304,21 +237,43 @@ Run: `.\testing\test_vscripts.ps1 -Full -Verbose`
 **Design:** 60% prop density, MaoLib hard dep, no VSLib, eventos>props, EntityOutputs nativos via Mapper.
 
 ---
-## 🔧 LSP SQUIRREL
+## 🤖 SurvAI v3 — Utility AI con Blackboard (EN PLANIFICACIÓN)
 
+**Proyecto grande.** Rediseño del sistema de IA de supervivientes (`sa_*`, l4cCoreSurvivorGameplay) para arreglar el avance all-bot y añadir humanización. **Plan detallado por fases → `docs/survai_v3_plan.md`** (LEER antes de tocar sa_*).
+
+**Problema:** sistema actual = "Minimal Intervention" con prioridades fijas. En all-bot, `DetectTask()` devuelve `ATTACK_COMMON` (75) casi siempre → `DetectAdvanceTask()` (30, la más baja) NUNCA se evalúa → bots estáticos.
+
+**Fix:** Utility AI — avance es UNA consideración con score dinámico (sube en SAFE, baja en COMBAT). Un solo pipeline, comportamientos repetibles.
+
+**Fases (cada una incremental, sin romper funcionalidad):**
+| Fase | Contenido | Riesgo |
+|------|-----------|--------|
+| 0 | Diagnóstico + baseline (logs actuales) | Bajo |
+| 1 | Fundación: `sa_team.nut` (TeamState/FlowState/Leader) + `sa_utility.nut` (scores+arbiter). BotThink usa arbiter. Detectores→consideraciones. Executors intactos | Bajo |
+| 2 | Avance por flow: `GetNavAhead` con `NavAreaTravelDistance` (gradiente), safety gate, líder dinámico | Medio |
+| 3 | Formación point/relay/rear/flex + combate-avance (`CommandABot(cmd=1)` + `IN_ATTACK`) | Medio |
+| 4 | Humanización: `sa_humanize.nut` (reaction delay, fail chance, aim error, personality, idle behaviors, exploración por capas) | Medio |
+| 5 | Pulido: debug blackboard, tuning scores, docs v3.0 | Bajo |
+
+**Truquillos clave (nadie los usa):** `NavMesh.NavAreaTravelDistance` (flow nativo), `CTerrorPlayer.GetLastKnownArea()`, `TerrorNavArea.IsCompletelyVisibleToTeam()`, cache de áreas por ID, percepción retardada por bot, combate-avance con botones forzados.
+
+**⚠️ CommandABot desactiva IA vanilla mientras está comandado** → re-comandar cada tick.
+
+**Regla de oro:** human-like, NO dioses. Bots que fallan, exploran, hacen chorradas y esperan al equipo. NO aim perfecto, NO reacción instantánea, NO teleport como solución.
+
+---
+## 🔧 LSP SQUIRREL
 `tools/squirrel-lsp/bin/squirrel-lsp.exe` (lostluna1/Squirrel-LSP). `vscript_stubs.nut` — 1012 lines typedefs.
 Config `opencode.json`: `squirrel-lsp.exe --stdio`. Include paths → vscripts dirs + `tools/squirrel-lsp`.
 
 ---
 ## 🔨 VTF-TOOLS
-
 `tools/vtf-tools/` — 14 CLI tools. Build: `clang++` via `_build_clang.bat`.
 **Regla:** usar `vtf_force_72` (VTF 7.2), no 7.5. 7.5 + double-zap = corrupt.
 **Bug fix (27 May):** vtfzapmain reescrito con VTFLib API pura. `Save(void*,vlUInt,vlUInt&)` — 3er param OUT ref, variable NO puede ser const.
 
 ---
 ## 📦 VPK COMPILER
-
 ```powershell
 .\Compile-VPKs.ps1                     # Interactive menu
 .\Compile-VPKs.ps1 -Force              # Rebuild all
@@ -326,78 +281,19 @@ Config `opencode.json`: `squirrel-lsp.exe --stdio`. Include paths → vscripts d
 ```
 Orden addons (dependencia): 1.l4cCoreAddon 2.CoreSurvivorGameplay 3.CoreVisuals 4.MapRefresh 5.CustomInfected 6.InfectedGameplay ... (16 total)
 Output: `D:\Software\SourceStuff\addons\compiled\`
-
----
-## 📂 AGENTS
-
-`C:\Users\Lord Gatito\.config\opencode\agents\`
-| Agent | File | Role |
-|-------|------|------|
-| ELLIS | `ellis.md` | VScript L4D2 expert — analysis, debug, scripts |
-| KEITH | `keith.md` | VScript verifier — errors, conflicts, validation |
-
----
-## 📚 NATIVES RÁPIDOS
-
-### Sonido
-`EmitSoundOn(sound,ent)` `EmitAmbientSoundOn(s,vol,level,pitch,ent)` `EmitSoundOnClient(s,player)` `StopAmbientSoundOn(s,ent)` `StopSoundOn(s,ent)`
-
-### Entity Spawn
-`SpawnEntityFromTable(class,kv)→handle` `SpawnEntityGroupFromTable(tbl)→bool` `PrecacheEntityFromTable(tbl)→bool`
-
-### Director
-`Director.GetGameMode()` `GetMapName()` `ResetMobTimer()` `ResetSpecialTimers()` `IsSinglePlayerGame()` `IsTankInPlay()` `GetAveragedSurvivorSpan()` `GetAveragedSurvivorSpeed()` `GetCommonInfectedCount()` `GetRandomSurvivor()`
-
-### NavMesh
-`NavMesh.GetNearestNavArea(pos,maxD,LOS,ground)` `NavAreaBuildPath(s,e,goal,maxD,team)→bool` `GetNavAreasInRadius(c,R,tbl)` `GetAllAreas(tbl)` `GetNavAreaCount()` `FindNavAreaAlongRay(s,e,ignore)`
-
-### Screen
-`ScreenShake(center,amp,freq,dur,R,cmd,air)` `ScreenFade(p,r,g,b,a,fadeT,hold,flags)`
-
-### Partículas — Reglas
-- `info_particle_system` requiere `Start` input obligatorio
-- `Stop` antes de reiniciar. `DestroyImmediately` para kill sin fade.
-- Hasta 64 Control Points. CP0 = origen default.
-
-### Eventos — attacker/attackerentid/entityid
-
-| Evento | Campo | Tipo | Significado |
-|--------|-------|------|-------------|
-| `player_hurt` | `userid` | short | Víctima (userid) |
-| | `attacker` | short | userid (players/SI) o **0** (CI — inválido) |
-| | `attackerentid` | long | **entindex** del CI atacante (usar `EntIndexToHScript`) |
-| `infected_hurt` | `entityid` | short | entindex del CI herido |
-| | `attacker` | short | userid del player/SI |
-| `player_death` | `attacker` | short | userid |
-| `infected_death` | `attacker` | long | entindex |
-
-🚨 `params.entityid` NO existe en `player_hurt`. Usar `params.attackerentid`.
-
----
-## 📚 FUENTES
-
-| Fuente | URL | Prioridad |
-|--------|-----|-----------|
-| **L4D2node VScript API** 🔥 | https://vscript.l4d2node.org/ | #1 — API real del binario |
-| **VDC** | https://developer.valvesoftware.com/ | #2 — Entidades, keyvalues |
-| **Squirrel 3.0 Manual** | http://squirrel-lang.org/doc/squirrel3.html | #1 — Sintaxis lenguaje |
-| **AlliedModders Events** | https://wiki.alliedmods.net/Left_4_dead_2_events | #3 — Eventos |
-| **LeeLand VScript FAQ** | https://www.leeland.info/vscript-faq.html | #4 — Tips |
-| **VSLib** | https://github.com/L4D2Scripters/vslib | #5 — Patrones |
-
-> **VDC/L4D2node > AlliedModders > LeeLand > VSLib > Pre-trained knowledge**
+🔴 **CRÍTICO: NO usar `vpk.exe` directo.** Siempre usar `Compile-VPKs.ps1`. VPKs creados manualmente en raíz serán ignorados por el loader y contaminan el directorio.
 
 ---
 ## ⚠️ ENTIDADES PROBLEMÁTICAS
-
 | Patrón | Riesgo |
 |--------|--------|
 | `info_null` (2+) | 🔴 Crash al cerrar saferoom |
 | `env_projectedtexture` | 🔴 Crash en L4D2 |
 | `ambient_generic.SetParent()` | 🔴 NO soporta parenting de posición |
-| `LookupBone` en "infected" | 🔴 Crash — usar `GetEffectPosition()` |
+| `LookupBone` en "infected" | ⚠️ Crash POTENCIAL (entidades sin huesos/animaciones incompletas). Para precisión (decals) puede ser necesario con try/catch. Fallback: `GetEffectPosition()` |
 | `QAngle.ToKVString()` | 🔴 NO existe — string manual |
 | Operador `<=>` | 🔴 NO existe en Squirrel |
+| `light_dynamic.SetOrigin()` con luz encendida | 🔴 NO actualiza posición visual — usar TurnOff→SetOrigin→TurnOn o parent |
 
 ### Nativos que NO funcionan como esperas
 - `ambient_generic`: Usar `SourceEntityName` keyvalue apuntando a info_target para sonido posicional
@@ -406,6 +302,20 @@ Output: `D:\Software\SourceStuff\addons\compiled\`
 
 ---
 ## 🐛 BUGS COMUNES
+
+### `light_dynamic` — NO `SetOrigin()` mientras está encendida
+```vscript
+// ❌ Posición no cambia visualmente
+light.SetOrigin(newPos)  // luz ya encendida: ignorado por renderer
+
+// ✅ Forzar re-evaluación de origen
+EntFire(light.GetName(), "TurnOff")
+light.SetOrigin(newPos)
+EntFire(light.GetName(), "TurnOn")
+
+// ✅ O parentear la luz a la entidad que se mueve
+light.SetParent(player)
+```
 
 ### `ambient_generic` — NO `SetParent()`
 ```vscript
@@ -445,13 +355,51 @@ DelayCall usa `UniqueString()` → nombre impredecible. Si necesitas cancelar, g
 local tn = MaoLib.DelayCall(fn, 5.0); MaoLib.RemoveTimer(tn)
 ```
 
-### 2. round_end cleanup OBLIGATORIO
-VM persiste entre rounds. Timers NO limpiados → se acumulan.
+### 2. Timer lifecycle — 🔴 PauseTimer RESETEA el intervalo
+**⚠️⚠️⚠️ CRÍTICO:** `PauseTimer` + `ResumeTimer` **NO preservan el timing.** `ResumeTimer()` hace `timer.nextRun = Time() + timer.interval`, perdiendo todo el progreso acumulado mientras estuvo pausado.
+
+**Ejemplo concreto:**
 ```vscript
+// Timer de 0.5s se pausa en t=10.2, se reanuda en t=15.0
+// nextRun = t=15.5 (NO t=10.7 como esperarías)
+// → 5 segundos de timing perdidos
+```
+
+**¿Cuándo usar PauseTimer?** SÓLO para un caso nicho: auto-pause por entity death. `TimerThink()` auto-pausa si `timer.entity` muere. Luego en el handler del spawn: `ResumeTimer()` revive.
+
+**Para TODO lo demás — RemoveTimer + AddTimerForce:**
+```vscript
+// ✅ CORRECTO: Remove en round_end, Add fresco en round_start
 function OnGameEvent_round_end(p) {
     MaoLib.RemoveTimer("my_timer")
     MyData.clear()
 }
+function OnGameEvent_round_start_post_nav(p) {
+    MaoLib.AddTimerForce("my_timer", 0.1, fn)
+}
+
+// ❌ NO hacer: Pause+Resume entre rounds (nextRun se resetea)
+function OnGameEvent_round_end(p) {
+    MaoLib.PauseTimer("my_timer")       // ← pierde timing
+}
+function OnGameEvent_round_start_post_nav(p) {
+    MaoLib.ResumeTimer("my_timer")      // ← nextRun = Time() + interval
+}
+```
+
+**⚠️ IsTimerActive es TRAMPA MORTAL:** devuelve `false` si el timer está PAUSED. Si lo usas para decidir entre AddTimer o no:
+```vscript
+// ❌ FALLO: IsTimerActive → false → AddTimer → WARNING (name existe)
+// → Timer queda PAUSED forever (BIG zombie)
+if (!MaoLib.IsTimerActive("my_timer"))
+    MaoLib.AddTimer("my_timer", 0.1, fn)
+
+// ✅ CORRECTO: AddTimerForce sobreescribe siempre
+MaoLib.AddTimerForce("my_timer", 0.1, fn)
+
+// ✅ CORRECTO: IsTimerRegistered si NECESITAS saber si existe
+if (MaoLib.IsTimerRegistered("my_timer"))
+    MaoLib.ResumeTimer("my_timer")   // pero cuidado con el nextRun reset
 ```
 
 ### 3. Sonidos looping → StopSoundOn EXPLÍCITO
@@ -495,7 +443,6 @@ function OnGameEvent_player_hurt(params) {
 
 ---
 ## ⚠️ SQUIRREL — Keywords reservadas
-
 NO usar como identifiers: `base`, `case`, `catch`, `class`, `clone`, `continue`, `default`, `delete`, `else`, `enum`, `extends`, `false`, `for`, `foreach`, `function`, `if`, `in`, `local`, `null`, `resume`, `return`, `static`, `switch`, `this`, `throw`, `true`, `try`, `typeof`, `while`, `yield`, `constructor`, `instanceof`, `rawcall`, `rawdelete`, `rawget`, `rawin`, `rawnew`, `rawset`, `rawthrow`, `delegate`, `parent`, `const`.
 ```vscript
 local threat = { class = zClass }  // ❌ class = keyword → expected 'IDENTIFIER'
@@ -503,12 +450,10 @@ local threat = {}; threat.class <- zClass  // ✅
 ```
 
 ## ⚠️ L4CWI_Core.RegisterSystem — Inyección _Dbg
-
 Scripts registrados con `L4CWI_Core.RegisterSystem("MiScript", scope)` reciben `_Dbg`, `_DbgWarn`, `_DbgError` automáticamente en su scope. Si usas `_Dbg()` en un script NO registrado → crash. Verificar SIEMPRE que el script esté registrado antes de usar `_Dbg`.
 
 ---
 ## 📋 CHECKLIST FINAL
-
 1. Functions como METHODS, no properties
 2. Tablas con `__CollectGameEventCallbacks(tabla)`, NUNCA getroottable()
 3. NO logic_timer → MaoLib.AddTimer

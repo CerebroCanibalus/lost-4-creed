@@ -1,61 +1,159 @@
 # ============================================================
-# L4C — Lost 4 Creed
-# GitIgnore: Solo scripts y configuración al repo.
-# Binarios pesados (modelos, texturas, sonidos) se excluyen.
+# Lost 4 Creed — L4C
+# Repositorio de CÓDIGO. Solo VScript, config, docs y tooling.
+# Los assets (modelos, texturas, sonidos, mapas, videos) y los
+# VPK compilados NO se versionan: se distribuyen aparte.
 # ============================================================
 
 # --------------------------------------------------
-# SOURCE ENGINE BINARIOS PESADOS
+# ASSETS — Source Engine (motivos del .gitignore)
 # --------------------------------------------------
 # Modelos
 *.mdl
-*.dx90.vtx
-*.dx80.vtx
-*.sw.vtx
+*.mdx
 *.vvd
-*.phy
+*.vtx
 *.ani
+*.phy
+*.smd
+*.vta
 
-# Texturas / Materiales
+# Texturas / materiales
 *.vtf
 *.vmt
+*.vtex
+*.vtex_c
 
-# Sonidos (WAV mono/stereo, MP3)
+# Sonidos
 *.wav
 *.mp3
+*.wma
+*.ogg
+*.flac
+*.aif
 
-# Videos
-*.bik
-
-# Archivos compilados VPK
-*.vpk
-
-# Partículas compiladas
-*.pcf
-
-# Nav meshes (se regeneran)
+# Mapas compilados
+*.bsp
 *.nav
+*.nav01
+*.map
+*.lmp
+*.vdata
 
-# --------------------------------------------------
-# CACHES Y TEMPORALES
-# --------------------------------------------------
+# Video
+*.bik
+*.webm
+*.mp4
+
+# Particulas compiladas
+*.pcf
+*.pcf_c
+
+# Paquetes
+*.vpk
+*.zip
+*.rar
+*.7z
+*.zst
+*.tar
+*.gz
+
+# Binarios y artefactos
+*.exe
+*.dll
+*.so
+*.pdb
+*.lib
+*.obj
+*.pyc
+*.class
 *.cache
-*.tmp
-*.temp
-*.log
 
-# Directorios de salida/compilación
+# Imagenes / capturas de depur
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tga
+
+# Source de authoring ( Autodesk Flame / Sound Forge / Perforce )
+*.flp
+*.sfk
+*.vcs
+*.aep
+*.prproj
+*.raw
+
+# varios de data files
+*.res
+*.vcc
+*.old
+*.backup
+*.bak
+
+# --------------------------------------------------
+# ADDONS SOLO-ASSET (sin una sola linea de VScript)
+# No aportan nada al repo de codigo. Se distribuyen como VPK.
+# --------------------------------------------------
+l4cAmbienceCore/
+l4cAmbienceCorePt2/
+l4cAmbienceCorePt3/
+l4cAnimationsCore/
+l4cEnvironmentCore/
+l4cEnvironmentCorePt2/
+l4cEnvironmentCorePt3/
+l4cHudGUI/
+l4cInfectedReplacements/
+l4cMusicCuesAndSoundsPt2/
+l4cMusicCuesAndSoundsPt3/
+l4cSurvivorsCast/
+l4cWeaponSounds/
+
+# --------------------------------------------------
+# PAPELERA
+# Codigo retirado del runtime, se conserva en disco pero
+# fuera del repo (disponible en el historial).
+# --------------------------------------------------
+trash_bin/
+trashbin/
+
+# --------------------------------------------------
+# DIRECTORIOS DE ASSETS / BUILD
+# --------------------------------------------------
 compiled/
 build/
 out/
 dist/
+materials/
+
+# Codigo y assets de TERCEROS (licencias propias, no redistribuibles aqui)
+referencias/
+references/
+tools/
+node_modules/
 
 # --------------------------------------------------
-# OPENCODE / EDITOR
+# EDITOR / AGENTE / CACHES
 # --------------------------------------------------
 .opencode/
 .vscode/
 .idea/
+.heren/
+.squirrel-lsp/
+.codebase-memory/
+__pycache__/
+*.tsbuildinfo
+
+# --------------------------------------------------
+# TEMPORALES Y LOGS
+# --------------------------------------------------
+*.log
+*.tmp
+*.temp
+testing_output_*
+_vmt_audit*
+_verify_temp*
 
 # --------------------------------------------------
 # SISTEMA
@@ -63,37 +161,18 @@ dist/
 .DS_Store
 Thumbs.db
 desktop.ini
+desktop.ini
+$RECYCLE.BIN/
 
 # --------------------------------------------------
-# SCRIPTS Y CONFIGS QUE SÍ VAN AL REPO
-# (Asegurar que nunca se ignoren por accidente)
+# LO QUE SI ENTRA AL REPO
 # --------------------------------------------------
 !*.nut
 !*.nuc
-!*.txt
 !*.cfg
-!*.ini
-!*.json
-!*.jsonc
 !*.ps1
 !*.bat
-!*.cmd
 !*.md
-
-# Archivos de build del proyecto
-!Makefile
-!CMakeLists.txt
-
-# Herramientas del repo (scripts de build, validación)
-!tools/**/*.nut
-!tools/**/*.txt
-!tools/**/*.cfg
-!tools/**/*.bat
-!tools/**/*.ps1
-!tools/**/*.md
-
-# Testing
-!testing/**/*.ps1
-!testing/**/*.nut
-!testing/**/*.txt
-!testing/**/*.cfg
+!*.json
+!*.hlsl
+!LICENSE

@@ -1,0 +1,62 @@
+name: Feature request
+description: Proponer una mejora o un sistema nuevo
+title: "[Feature] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que resuelve
+      description: Qué no se puede hacer hoy. No la solución todavía.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - MaoLib (núcleo)
+        - Director / lógica de juego
+        - Supervivientes / perks
+        - IA de infectados
+        - Armas / items
+        - MapRefresh / mapas
+        - HUD / VFX / sonido
+        - Tooling / build
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Riesgo de romper funcionalidad existente
+      description: El modpack depende de load order y tablas de eventos compartidas
+      options:
+        - Bajo — aditivo, no toca carga ni eventos
+        - Medio — toca código compartido
+        - Alto — toca load order, eventos o MaoLib
+    validations:
+      required: true
+
+  - type: textarea
+    id: maolib
+    attributes:
+      label: ¿Se puede resolver con MaoLib?
+      description: MaoLib es la dependencia dura. Si ya existe algo que lo haga, dilo
+    validations:
+      required: false
+
+  - type: textarea
+    id: alt
+    attributes:
+      label: Alternativas consideradas
+    validations:
+      required: false

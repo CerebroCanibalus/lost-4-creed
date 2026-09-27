@@ -1,0 +1,95 @@
+[h1] WARNING: May be TOO INTENSE for Nightmare players! [/h1]
+[h1] ADVERTENCIA: ¡Puede ser DEMASIADO INTENSO para jugadores de Nightmare! [/h1]
+
+(Join the collection's [url=https://discord.gg/nveQ65wzgC]Discord[/url] to share your thoughts about the modpack!)
+
+[code]
+Lost 4 Creed began as a passion project by GrayBox Studios — ex-Catholic seminary students turned developers. Their goal: co-op zombie survival horror born from a Counter-Strike mod. Valve Corporation bought the studio; development began in 2001.
+
+Lead designer Martin Voss became fixated on capturing "authentic dissociative episodes" for zombie voice lines. He interviewed asylum patients under dubious pretenses, later facing allegations of triggering relapses in vulnerable subjects. A playtester filed a lawsuit claiming the sound design precipitated a psychotic episode — leaked courtroom footage showed him mid-panic attack, clawing at his throat. The case was dismissed due to preexisting mental health history.
+
+Two years in, Lead Programmer Clara Reyes was found dead in her apartment, body decomposed beside a recording device. Colleagues privately accused Voss. No evidence surfaced. Months later, audio designers discovered encrypted files within the game's assets: recordings of Clara's final moments. Staff fled. The project collapsed.
+
+Investors withdrew. Valve dissolved the studio, repurposing assets into Left 4 Dead. But weeks before L4D's launch, an unfinished build surfaced online. Buried in its code: unidentified crime audio and a single scrawled line: "Do you not know that your bodies are temples of the Holy Spirit, who is in you, whom you have received from God?"
+
+The build you're accessing was reassembled from the 2008 leak, corrupted server backups, and files recovered from GrayBox's abandoned offices. Valve has never acknowledged its existence.
+[/code]
+
+[h2] What's been recovered — Lo que se ha recuperado [/h2]
+[list]
+    [*] Restored 92% of the original campaigns // Campañas originales restauradas al 92%
+    [*] Full sound design overhaul — asylum recordings, spatial audio, reworked weapon SFX // Rediseño completo de audio
+    [*] Restored gameplay systems // Sistemas de juego originales restaurados
+    [*] Restored weapons with unique mechanics // Armas con mecánicas únicas
+    [*] Recovered lore and narrative // Lore y narrativa recuperados
+[/list]
+
+[h2] Supported Gamemodes — Modos de juego [/h2]
+[list]
+    [*] Versus / Co-Op / Survival / Solo
+[/list]
+
+[h2] Gameplay — Jugabilidad [/h2]
+
+[list]
+    [*] [b]Complete visual and sound overhaul[/b] — New textures, models, particle effects, rebalanced weapon audio, ambient horror soundscape. // Renovación visual y de sonido completa.
+
+    [*] [b]🔥 NEW: The Butcher[/b] — A Boomer consumed by rage. Swarms of homing flies hunt survivors, dealing DoT and slow. 2,860 HP, fury stacks amplify speed, NavMesh pathfinding. Available in Versus! // Nuevo infected especial: El Carnicero. Enjambres de moscas que persiguen, ralentizan y dañan.
+
+    [*] [b]NEW: Hellhound[/b] — A feral Jockey with brutal leap attacks, bleed damage, and intelligent flanking AI. // Nuevo infected especial: Sabueso infernal. Ataques de salto, sangrado, flanqueo inteligente.
+
+    [*] [b]Recoil System v2[/b] — Weapons feel like WEAPONS. Exponential recoil easing, unique profiles per gun, ADS stability. Every shot has weight. // Sistema de retroceso renovado. Cada arma se siente real.
+
+    [*] [b]Adjustable Flashlight[/b] — Toggle, intensity, and cone control. Your light, your choice. // Linterna ajustable: intensidad y cono regulables.
+
+    [*] [b]Dynamic Lighting[/b] — Real-time muzzle flashes, SI ability glow, firework illumination. Light follows projectiles. Immersive darkness. // Iluminación dinámica: fogonazos, habilidades de SI, explosiones iluminan el entorno.
+
+    [*] [b]Acoustic Terror System[/b] — Sound attracts the horde. Walking, jumping, shooting — every noise has consequence. Watch your step. // Sistema acústico: el ruido atrae a la horda. Cada paso cuenta.
+
+    [*] [b]NEW: Hunter's Wound[/b] — Hunting rifle rework. Bleed DoT (5 HP/s, 3s) + execution at ≤30% HP (180 bonus damage). One shot, one kill. // Rifle de caza rework: sangrado progresivo + ejecución letal.
+
+    [*] [b]NEW: Bren LMG[/b] — Desert Rifle converted to burst-fire LMG. 60-round mag, heavy punch, suppressive fire. // Fusil Desert convertido a ametralladora ligera de fuego intermitente.
+
+    [*] [b]Item Buffs[/b] — Medkits, gnomes, pills, and adrenaline grant passive area bonuses to you and nearby survivors. // Objetos otorgan beneficios pasivos de área.
+
+    [*] [b]Jumpscare Doors (PvE only)[/b] — Opening doors may spawn passive specials. Pure fear. No unfair damage. Pure ambiance. // Puertas con jumpscares (solo PvE). Aparecen specials pasivos. Ambiente puro.
+
+    [*] [b]Huge Hordes — Stable Performance[/b] — 60→5 Hz optimizations, NavMesh caching, timer consolidation. Bigger hordes, same fps. // Hordas masivas con rendimiento estable gracias a optimización profunda.
+
+    [*] [b]Single Grab Weapons[/b] — Infinite ammo in saferooms. Single-use outside. Strategic resource management. // Armas de un solo uso fuera del refugio, infinitas dentro.
+
+    [*] [b]Tank Berserker[/b] — Fire trails, directional shockwave, cinematic death explosion. Every Tank fight is an event. // Tanque berserker con estela de fuego, onda expansiva y muerte espectacular.
+
+    [*] [b]Dash System[/b] — Tactical dodge with cooldown. Evade, reposition, survive. // Esquiva táctica con enfriamiento.
+
+    [*] [b]Watch for Crows![/b] — Crow piles alert the horde when disturbed. New environmental threat. // Bandadas de cuervos alertan a la horda si las perturbas.
+
+    [*] [b]Color Correction[/b] — Custom color grading across 21 maps in 5 campaigns. Atmospheric, oppressive, cinematic. // Corrección de color personalizada en 21 mapas.
+
+    [*] [b]Improved Infected AI[/b] — Smarter specials: hunter no longer self-staggers, smoker choke damage rewards distance, spitter sound-lock fixed. // IA mejorada: infected más inteligentes y justos.
+
+    [*] [b]Jumps[/b] now attract infected. Move with purpose. // Saltar ahora atrae infectados.
+[/list]
+
+[h2] Story — Historia [/h2]
+
+[code]
+Seven became eight. No names left. Just roles. Brenda points. Jason burns. The others follow. They think this is a test—that the Flu is His wrath. Maybe it is. 'And the Lord said, I will destroy man whom I have created.' Genesis 6:7. But we don't speak. Words are for the guilty. Let the infected scream. We walk.
+
+Found the bunker's coordinates scratched into my journal. Jason traced the route. Brenda nodded. The others? Chris digs graves. Jerry unloads guns. Phil counts bullets like rosary beads. Sean listens to the corpses. Brock sharpens our weapons. Jaime keeps us safe during nighttime. Eight fingers around one throat. 'The righteous shall live by faith.' Habakkuk 2:4. Faith in what? The bunker? The cure? Or just the silence?
+
+Four weeks since the last human voice. The infected don't howl near us anymore. They listen. Brenda says (not says, never says) it's a sign. Jason carves crosses into their foreheads after they're dead. The bunker's real. We've seen the trucks. The bodies in lab coats. The vials labeled 'ZMB-14.' 12, 13, 14, 15... A cure.
+[/code]
+
+[h2] Campaign Order — Orden de las campañas [/h2]
+
+Find the custom maps and full storyline in [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3453894053]this collection[/url]!
+
+Encuentra los mapas personalizados y la historia completa en [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3453894053]esta colección[/url].
+
+[h2] Credits — Créditos [/h2]
+Made by ElCerebro (Foreskin Version) and Richardhafer
+
+[h1] No Further Configuration Needed! Make sure to report any problems and enjoy it! — ¡No requiere configuración adicional! Reporta cualquier problema y ¡disfruta![/h1]
+
+[url=https://steamcommunity.com/sharedfiles/filedetails/?id=2565672440](SUGGESTED INTRO TO FIT THE MODPACK)[/url]

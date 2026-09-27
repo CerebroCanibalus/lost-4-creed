@@ -1,0 +1,8 @@
+"AddonInfo"
+{
+	AddonTitle          "MaoLib - L4D2 VScript Framework"
+	AddonVersion        "2.2"
+	AddonDescription    "Standalone VScript library for L4D2 modders. Timer manager, AoE, NavUtils, VFX, HUD, player state, modifiers, status effects, and more."
+	AddonAuthor         "Lost 4 Creed Team (Beria & Richardhaifer) — Standalone release"
+	AddonURL0           "https://discord.gg/NWPYT7MEEa"
+}
