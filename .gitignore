@@ -111,6 +111,28 @@ l4cSurvivorsCast/
 l4cWeaponSounds/
 
 # --------------------------------------------------
+# NOTAS INTERNAS / AUDITORIAS
+# Documentacion de trabajo: diagnosticos, informes de balance y
+# planes de trabajo. No es documentacion del proyecto, asi que
+# no entra al repo. Se conservan en disco.
+# --------------------------------------------------
+# Diagnosticos y auditorias
+BALANCE_ISSUES_1.md
+DISCOVERIES_FLASHLIGHT_UPDATE.md
+FLASHLIGHT_DIAGNOSTICO_CRITICO.md
+MAPREFRESH_RECURSOS.md
+THINKER_ISSUES_REPORT.md
+survivor_ai_audit_report.md
+docs/flamethrower_postmortem.md
+
+# Planes de trabajo
+LEPORITSA_BERSERKER_PLAN.md
+docs/survai_plan.md
+l4cCoreSurvivorGameplay/scripts/vscripts/PERKS_PLAN.md
+l4cCoreSurvivorGameplay/scripts/vscripts/posibles_mejoras.md
+l4cMusicCuesAndSounds/scripts/vscripts/L4C_MUSIC_PLAN.md
+
+# --------------------------------------------------
 # PAPELERA
 # Codigo retirado del runtime, se conserva en disco pero
 # fuera del repo (disponible en el historial).
