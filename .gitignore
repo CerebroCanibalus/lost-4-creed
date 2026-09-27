@@ -183,18 +183,11 @@ _verify_temp*
 .DS_Store
 Thumbs.db
 desktop.ini
-desktop.ini
 $RECYCLE.BIN/
 
 # --------------------------------------------------
-# LO QUE SI ENTRA AL REPO
-# --------------------------------------------------
-!*.nut
-!*.nuc
-!*.cfg
-!*.ps1
-!*.bat
-!*.md
-!*.json
-!*.hlsl
-!LICENSE
+# NOTAS
+# No hay reglas globales que excluyan .nut, .nuc, .cfg, .ps1, .bat, .md,
+# .json, .hlsl ni LICENSE, asi que entran por defecto. NO anadas negaciones
+# tipo "!*.md" aqui: al ir al final del fichero tendrian prioridad sobre
+# las exclusiones de arriba y las reincorporarian al repo.
